@@ -78,11 +78,15 @@ KBar_dic['amount']=np.array(KBar_amount_list)
 
 Date = start_date.strftime("%Y-%m-%d")
 
-st.subheader("設定一根 K 棒的時間長度(日)")
-cycle_duration = st.number_input('輸入一根 K 棒的時間長度(單位:日)', key="KBar_duration")
-cycle_duration = int(cycle_duration)
-
-KBar = indicator_forKBar_short.KBar(Date,cycle_duration * 1440)    ## 設定cycle_duration可以改成你想要的 KBar 週期
+st.subheader("設定一根 K 棒的時間長度")
+time_unit = st.selectbox("選擇時間單位", ["小時", "日"], key="time_unit")
+# 根據選擇的時間單位輸入 K 棒的時間長度
+if time_unit == "小時":
+    cycle_duration = st.number_input('輸入一根 K 棒的時間長度(單位:小時)', key="KBar_duration_hours")
+    cycle_duration_minutes = int(cycle_duration) * 60
+else:
+    cycle_duration = st.number_input('輸入一根 K 棒的時間長度(單位:日)', key="KBar_duration_days")
+    cycle_duration_minutes = int(cycle_duration) * 1440
 
 
 for i in range(KBar_dic['time'].size):
