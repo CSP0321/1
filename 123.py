@@ -87,7 +87,7 @@ if time_unit == "小時":
 else:
     cycle_duration = st.number_input('輸入一根 K 棒的時間長度(單位:日)', key="KBar_duration_days")
     ccycle_duration = int(cycle_duration)
-    KBar = indicator_forKBar_short.KBar(Date,cycle_duration * 60)
+    KBar = indicator_forKBar_short.KBar(Date,cycle_duration * 1440)
 
 for i in range(KBar_dic['time'].size):
     
