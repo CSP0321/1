@@ -219,3 +219,77 @@ with st.expander("K線圖, 長短 RSI"):
     
     fig2.layout.yaxis2.showgrid=True
     st.plotly_chart(fig2, use_container_width=True)
+
+# 計算KDJ指標
+def calculate_kdj(df, n=9, m1=3, m2=3):
+    df['low_min'] = df['Low'].rolling(window=n, min_periods=1).min()
+    df['high_max'] = df['High'].rolling(window=n, min_periods=1).max()
+    df['rsv'] = (df['Close'] - df['low_min']) / (df['high_max'] - df['low_min']) * 100
+    df['k'] = df['rsv'].ewm(com=m1 - 1, adjust=False).mean()
+    df['d'] = df['k'].ewm(com=m2 - 1, adjust=False).mean()
+    df['j'] = 3 * df['k'] - 2 * df['d']
+    df.drop(['low_min', 'high_max', 'rsv'], axis=1, inplace=True)
+ 
+# 將KDJ指標添加到KBar DataFrame中
+calculate_kdj(KBar_df)
+ 
+# 設置實單交易策略
+def trading_strategy(df):
+    df['buy_signal'] = (df['k'] > df['d']) & (df['k'].shift(1) < df['d'].shift(1))
+    df['sell_signal'] = (df['k'] < df['d']) & (df['k'].shift(1) > df['d'].shift(1))
+    # 根據實單交易策略執行相應的交易操作，這裡可以添加您的交易程式碼
+ 
+# 執行交易策略
+trading_strategy(KBar_df)
+ 
+# 繪製包含KDJ指標和交易信號的圖表
+with st.expander("K線圖, KDJ指標, 實單交易策略"):
+    fig3 = make_subplots(specs=[[{"secondary_y": True}]])
+    # K線圖
+    fig3.add_trace(go.Candlestick(x=KBar_df['Time'],
+                    open=KBar_df['Open'], high=KBar_df['High'],
+                    low=KBar_df['Low'], close=KBar_df['Close'], name='K線'),
+                   secondary_y=True)
+    # KDJ指標
+    fig3.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['k'], mode='lines',line=dict(color='blue', width=2), name='K'), 
+                  secondary_y=False)
+    fig3.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['d'], mode='lines',line=dict(color='red', width=2), name='D'), 
+                  secondary_y=False)
+    fig3.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['j'], mode='lines',line=dict(color='green', width=2), name='J'), 
+                  secondary_y=False)
+    # 交易信號
+    fig3.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['Close'], mode='markers', marker=dict(color='green', size=8), 
+                               name='買入信號', customdata=KBar_df['buy_signal']), secondary_y=True)
+    fig3.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['Close'], mode='markers', marker=dict(color='red', size=8), 
+                               name='賣出信號', customdata=KBar_df['sell_signal']), secondary_y=True)
+    fig3.layout.yaxis2.showgrid=True
+    st.plotly_chart(fig3, use_container_width=True)
+ 
+ 
+# 計算布林通道指標
+def calculate_bollinger_bands(df, window=20, num_std_dev=2):
+    df['MA'] = df['Close'].rolling(window=window).mean()
+    df['std_dev'] = df['Close'].rolling(window=window).std()
+    df['upper_band'] = df['MA'] + (num_std_dev * df['std_dev'])
+    df['lower_band'] = df['MA'] - (num_std_dev * df['std_dev'])
+ 
+# 添加布林通道指標到KBar DataFrame中
+calculate_bollinger_bands(KBar_df)
+ 
+# 繪製包含布林通道指標的圖表
+with st.expander("K線圖, 布林通道"):
+    fig4 = make_subplots(specs=[[{"secondary_y": True}]])
+    # K線圖
+    fig4.add_trace(go.Candlestick(x=KBar_df['Time'],
+                    open=KBar_df['Open'], high=KBar_df['High'],
+                    low=KBar_df['Low'], close=KBar_df['Close'], name='K線'),
+                   secondary_y=True)
+    # 布林通道
+    fig4.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['upper_band'], mode='lines',line=dict(color='orange', width=2), name='Upper Band'), 
+                  secondary_y=False)
+    fig4.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['MA'], mode='lines',line=dict(color='blue', width=2), name='MA'), 
+                  secondary_y=False)
+    fig4.add_trace(go.Scatter(x=KBar_df['Time'], y=KBar_df['lower_band'], mode='lines',line=dict(color='purple', width=2), name='Lower Band'), 
+                  secondary_y=False)
+    fig4.layout.yaxis2.showgrid=True
+    st.plotly_chart(fig4, use_container_width=True)
